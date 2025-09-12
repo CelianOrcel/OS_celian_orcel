@@ -1,4 +1,4 @@
-echo "*.class" >> .gitignore
-echo "*.jar" >> .gitignore
-echo "*.o" >> .gitignore
-echo "*.obj" >> .gitignore
+*.class
+*.jar
+*.o
+*.obj
