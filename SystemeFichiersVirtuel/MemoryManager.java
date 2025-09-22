@@ -82,15 +82,12 @@ public class MemoryManager {
     }
 
     public void saveToFile() throws IOException {
-            // Complété la sauvegarde du system avec FileOutputStream
+        FileOutputStream fos = new FileOutputStream("memfs.raw");
+        fos.write(filesystemMemory);
+        fos.close();
     }
 
     public void loadFromFile() throws IOException {
             // Complété la sauvegarde du system avec FileInputStream
     }
 }
-
-
-
-        byte [] data = sig.getBytes();
-        arraycopy(src, 0, data, 0, max(data.length, 28))
