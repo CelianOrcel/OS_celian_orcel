@@ -36,14 +36,19 @@ public class MemoryManager {
     }
 
     private void writeSuperblock() {
-        // Exemple minimal (tu peux stocker plus d’infos si tu veux)
         String signature = "MYFS1.0";
+        System.arraycopy(signature, 0, filesystemMemory, 0, Math.max(signature.length, 28));
 
-                //! Complétez la fonction
-                // Utiliser System.arraycopy pour stocker MYFS1.0 dans le tableau de 1Mo
-                // Sauvegarder les variables du systeme (block size, total memory, etc, max inodes)
-                // exemple
-                // new byte[] { (byte)(value >>> 24), (byte)(value >>> 16), (byte)(value >>> 8), (byte)value};
+        int [] parameters = new int [] {
+            BLOCK_SIZE,
+            TOTAL_MEMORY
+        };
+
+        System.arraycopy(parameters, 0, filesystemMemory, 0, 4*parameters.length);
+
+        // copier BLOCK_SIZE
+        //Utils.writeInt(filesystemMemory, 28, BLOCK_SIZE);
+        //Utils.writeInt(filesystemMemory, 34, TOTAL_MEMORY);
     }
 
     public boolean setBlockUsed(int blockNumber, boolean used) {
