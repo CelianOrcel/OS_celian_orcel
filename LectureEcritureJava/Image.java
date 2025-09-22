@@ -30,18 +30,13 @@ public class Image {
         }
     }
 
-    /**
-     * Sauvegarde l'image au format texte PPM (P3)
-     */
     public void save_txt(String filename) throws IOException {
-        FileWriter writer = new FileWriter(filename) 
-        // En-tête PPM
-        writer.write("P3\n");
-        writer.write(width + " " + height + "\n");
-        writer.write("255\n");
+        try (FileWriter writer = new FileWriter(filename)) {
+            writer.write("P3\n");
+            writer.write(width + " " + height + "\n");
+            writer.write("255\n");
 
-        // Pixels
-        for (int y = 0; y < height; y++) {
+            for (int y = 0; y < height; y++) {
             for (int x = 0; x < width; x++) {
                 int r = pixels[y][x][0];
                 int g = pixels[y][x][1];
@@ -49,30 +44,79 @@ public class Image {
                 writer.write(r + " " + g + " " + b + " ");
             }
             writer.write("\n");
-    }
-
-
-    static public read_txt(String filename) throws IOException {
-        FileInputStream fs = new FileInputStream("FirstPPM.ppm");
-        Scanner sc = new scanner(fs);
-
-        if (sc.nextLine() != "P3") {
-            throw new IOException(erreurFormat);
-        }
-
-        int width = sc.nextInt();
-        int height = sc.nextInt();
-        int max = sc.nextInt();
-
-        Image img = new Image(width, height);
-
-        for (int y = 0; y < height; y++) {
-            for (int x = 0; x < width; x++) {
-                int r = sc.nextLine();
-                int g = sc.nextLine();
-                int b = sc.nextLine();
-                img.setPixel(x, y, r, g, b);
             }
         }
     }
+
+    /**
+     * Lecture d'une image au format texte PPM (P3)
+     */
+    public static Image read_txt(String filename) throws IOException {
+        try (FileInputStream fis = new FileInputStream(filename);
+                Scanner sc = new Scanner(fis)) {
+
+            // Vérification du format
+            String magic = sc.next();
+            if (!magic.equals("P3")) {
+            throw new IOException("Format PPM non supporté : " + magic);
+            }
+
+            // Lecture dimensions + valeur max
+            int width = sc.nextInt();
+            int height = sc.nextInt();
+            int maxVal = sc.nextInt(); // typiquement 255
+
+            // Création de l'image
+            Image img = new Image(width, height);
+
+            // Remplissage des pixels
+            for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
+                int r = sc.nextInt();
+                int g = sc.nextInt();
+                int b = sc.nextInt();
+                img.setPixel(x, y, r, g, b);
+            }
+            }
+
+            return img;
+        }
+    }
+
+    /**
+     * Sauvegarde l'image au format PPM binaire (P6)
+     */
+    public void save_bin(String filename) throws IOException {
+        FileOutputStream fos = new FileOutputStream(filename);
+        // En-tête
+        String header = "P6\n" + width + " " + height + "\n255\n";
+        fos.write(header.getBytes());
+
+        // Pixels (R, G, B en octets)
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
+                fos.write((byte) pixels[y][x][0]); // R
+                fos.write((byte) pixels[y][x][1]); // G
+                fos.write((byte) pixels[y][x][2]); // B
+            }
+        }
+
+    }
+
+    /**
+     * Lecture d'une image au format PPM binaire (P6)
+     */
+    public static Image read_bin(String filename) throws IOException {
+        try (FileInputStream fis = new FileInputStream(filename)) {
+            // Lire l'en-tête en texte
+            StringBuilder header = new StringBuilder();
+            int c;
+            int newlines = 0;
+            while (newlines <3 && (c = fis.read() != -1)) {
+                //....
+            }
+            //....
+        }
+    }
+
 }
