@@ -29,22 +29,22 @@ public class ProcessController {
      * @throws IOException si le lancement échoue
      */
     public Process executeSimple(String command, String[] args) throws IOException {
-        String[] fullCommand = {"ls", "python3", "notepad.exe"}; 
+        // Construire le tableau complet de la commande
+        String[] fullCommand; 
 
         if (args == null) {
             fullCommand = new String[] {command};
         } else {
-            fullCommand = new String[] {command};
-            for (int i = 0; i < args.length; i++) {
-                fullCommand[i + 1] = args[i];
-            }
+            fullCommand = new String[args.length + 1];
+            fullCommand[0] = command;
+            System.arraycopy(args, 0, fullCommand, 1, args.length);
         }
         
-        processBuilder pb = new ProcessBuilder();
-        pb.command(fullCommand);
-
-        currentProcess = pb.start();
-
+        // Configurer la commande dans ProcessBuilder
+        processBuilder.command(fullCommand);
+        // Lancer le processus
+        currentProcess = processBuilder.start();
+        // Afficher la commande pour le debug
         System.out.println("Lancement de : " + command);
         return currentProcess;
     }
@@ -63,19 +63,24 @@ public class ProcessController {
     public Process executeWithRedirection(String command, File outputFile, 
                                         File errorFile, String[] args) throws IOException {
 
-        // TODO Utiliser executeSimple pour lancer le processus de base
-        Process process = null;
+        // Utiliser executeSimple pour lancer le processus de base
+        Process process = executeSimple(command, args);
 
-        // TODO Si outputFile n'est pas null, configurer la redirection
-        // processBuilder.redirectOutput(outputFile);
+        // Si outputFile n'est pas null, configurer la redirection
+        if (outputFile != null) {
+            processBuilder.redirectOutput(outputFile);
+        }
 
-        // TODO Si errorFile n'est pas null, configurer la redirection d'erreur
-        // processBuilder.redirectError(errorFile);
+        // Si errorFile n'est pas null, configurer la redirection d'erreur
+        if (errorFile != null) {
+            processBuilder.redirectError(errorFile);
+        }
+        
 
         System.out.println("Redirection configurée - Sortie: " + outputFile + ", Erreur: " + errorFile);
 
-        // TODO Relancer le processus avec les redirections
-        currentProcess = null;
+        // Relancer le processus avec les redirections
+        currentProcess = processBuilder.start();
         return currentProcess;
     }
 
@@ -89,12 +94,13 @@ public class ProcessController {
      * @throws IOException si le lancement échoue
      */
     public Process executeInteractive(String command, String[] args) throws IOException {
-        // TODO Utiliser executeSimple pour lancer le processus
+        // Utiliser executeSimple pour lancer le processus
+        Process process = executeSimple(command, args);
         // (Les flux restent accessibles par défaut)
 
         System.out.println("Mode interactif activé pour : " + command);
 
-        return null;
+        return process;
     }
 
     /**
@@ -109,13 +115,18 @@ public class ProcessController {
     public int waitForProcess(Process process, int timeoutSeconds) throws InterruptedException {
 
         if (timeoutSeconds <= 0) {
-            // TODO Attendre indéfiniment avec process.waitFor()
-            return 0;
+            process.waitFor();
+            return process.exitValue();
         } else {
-            // TODO Utiliser process.waitFor(timeoutSeconds, java.util.concurrent.TimeUnit.SECONDS)
-            // TODO Si le processus se termine dans les temps, retourner process.exitValue()
-            // TODO Sinon, appeler process.destroyForcibly() et retourner -1
-            return -1;
+            // Utiliser process.waitFor(timeoutSeconds, java.util.concurrent.TimeUnit.SECONDS)
+            boolean finishedInTime = process.waitFor(timeoutSeconds, java.util.concurrent.TimeUnit.SECONDS);
+            // Si le processus se termine dans les temps, retourner process.exitValue()
+            if (finishedInTime) {
+                return process.exitValue();
+            } else {
+                process.destroyForcibly();
+                return -1;
+            }
         }
     }
 
@@ -123,12 +134,14 @@ public class ProcessController {
      * Envoie des données à l'entrée standard d'un processus interactif.
      */
     public void sendInput(Process process, String input) throws IOException {
-        // TODO Obtenir l'OutputStream du processus
-        OutputStream outputStream = null;
+        // Obtenir l'OutputStream du processus
+        OutputStream outputStream = process.getOutputStream();
 
         if (outputStream != null) {
-            // TODO Écrire les données + retour à la ligne
+            // Écrire les données + retour à la ligne
+            outputStream.write(input + "\n");
             // TODO Appeler flush() pour forcer l'envoi
+            outputStream.flush();
         }
 
         System.out.println("Envoi vers le processus : " + input);
@@ -139,11 +152,16 @@ public class ProcessController {
      */
     public String readOutput(Process process) throws IOException {
         // TODO Obtenir l'InputStream du processus
-        InputStream inputStream = null;
+        InputStream inputStream = process.getInputStream();
 
         if (inputStream != null) {
             // TODO Vérifier s'il y a des données avec inputStream.available()
-            // TODO Si oui, les lire et les retourner comme String
+            if (inputStream.available() > 0) {
+                // Si oui, les lire et les retourner comme String
+                byte[] buffer = new byte[inputStream.available()];
+                int bytesRead = inputStream.read(buffer);
+                return new String(buffer, 0, bytesRead);
+            }
         }
 
         return "";
@@ -153,4 +171,31 @@ public class ProcessController {
     public Process getCurrentProcess() { 
         return currentProcess; 
     }
-}
+
+    public static void main (String[] args) {
+        
+        System.out.println("Test N°1");
+        ProcessController process1 = new ProcessController();
+
+        String[] param = {"/c", "echo", "Hello World"};
+
+        try {
+            process1.executeSimple("cmd", param);
+        } catch (Exception e) {
+            System.out.println("Erreur : " + e.getMessage());
+            e.printStackTrace();
+        }
+
+        System.out.println("Test N°2");
+        ProcessController process2 = new ProcessController();
+        File outputFile = new File("output.txt");
+        File error = new File("error.txt");
+
+        try {
+            process2.executeWithRedirection("cmd", outputFile, error, param);
+        } catch (IOException e) {
+            System.out.println("Erreur lors de l'exécution avec la redirection : " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+} 
