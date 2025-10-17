@@ -4,7 +4,6 @@ public class Calcule extends Thread {
     private int valeur;
     private int multplicateur;
     private int index;
-    private long resultat;
 
     /**
      * Constructeur de la classe Calcule
@@ -16,7 +15,6 @@ public class Calcule extends Thread {
         this.valeur = valeur;
         this.multplicateur = multplicateur;
         this.index = index;
-        this.resultat = 0;
     }
 
     /**
@@ -25,7 +23,8 @@ public class Calcule extends Thread {
     @Override
     public void run() {
         // Même logique que dans la boucle interne de CalculSequentiel
-        for (int j = 0; j < multplicateur; j++) {
+        long resultat = 0;
+        for (int j = 0; j < MULTIPLICATEUR; j++) {
             resultat += valeur * valeur + valeur;
         }
     }
